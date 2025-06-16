@@ -113,8 +113,8 @@ async function getPosition(context: LoaderContext, chainId: number, positionId: 
                 tickLower_id: `${poolAddress}#${tickLower}`,
                 tickUpper_id: `${poolAddress}#${tickUpper}`,
                 pool_id: poolAddress,
-                token0_id: token0,
-                token1_id: token1,
+                token0_id: token0.toLowerCase(),
+                token1_id: token1.toLowerCase(),
                 transaction_id: "",
                 withdrawnToken0: ONE_BD,
                 withdrawnToken1: ONE_BD
