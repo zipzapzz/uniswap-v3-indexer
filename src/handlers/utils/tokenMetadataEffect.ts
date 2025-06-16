@@ -6,6 +6,8 @@ import { join } from "path";
 import { ADDRESS_ZERO } from "./constants";
 import { getChainConfig } from "./chains";
 import * as dotenv from "dotenv";
+import { keccak256, toUtf8Bytes, ethers } from 'ethers';
+import { getRpcUrl } from "./rpc";
 
 dotenv.config();
 
@@ -46,6 +48,8 @@ const ERC20_ABI = [
     type: "function",
   },
 ] as const;
+
+const LSP7ABI = [{"type":"function","name":"totalSupply","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"balanceOf","inputs":[{"name":"tokenOwner","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"decimals","inputs":[],"outputs":[{"name":"","type":"uint8","internalType":"uint8"}],"stateMutability":"view"},{"type":"function","name":"getData","inputs":[{"name":"dataKey","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"dataValue","type":"bytes","internalType":"bytes"}],"stateMutability":"view"},{"type":"function","name":"getDataBatch","inputs":[{"name":"dataKeys","type":"bytes32[]","internalType":"bytes32[]"}],"outputs":[{"name":"dataValues","type":"bytes[]","internalType":"bytes[]"}],"stateMutability":"view"}] as const;
 
 // Create .cache directory if it doesn't exist
 const CACHE_DIR = join(__dirname, "../../../.cache");
@@ -92,38 +96,6 @@ const saveCache = async (chainId: number): Promise<void> => {
     );
   } catch (e) {
     console.error(`Error saving token metadata cache for chain ${chainId}:`, e);
-  }
-};
-
-// Helper function to get RPC URL for a chain
-const getRpcUrl = (chainId: number): string => {
-  switch (chainId) {
-    case 1:
-      return process.env.MAINNET_RPC_URL || "https://eth.drpc.org";
-    case 42161:
-      return process.env.ARBITRUM_RPC_URL || "https://arbitrum.drpc.org";
-    case 10:
-      return process.env.OPTIMISM_RPC_URL || "https://optimism.drpc.org";
-    case 8453:
-      return process.env.BASE_RPC_URL || "https://base.drpc.org";
-    case 137:
-      return process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
-    case 43114:
-      return process.env.AVALANCHE_RPC_URL || "https://avalanche.drpc.org";
-    case 56:
-      return process.env.BSC_RPC_URL || "https://bsc.drpc.org";
-    case 81457:
-      return process.env.BLAST_RPC_URL || "https://blast.drpc.org";
-    case 7777777:
-      return process.env.ZORA_RPC_URL || "https://zora.drpc.org";
-    case 1868:
-      return process.env.SONIEUM_RPC_URL || "https://sonieum.drpc.org";
-    case 130:
-      return process.env.UNICHAIN_RPC_URL || "https://unichain.drpc.org";
-    case 57073:
-      return process.env.INK_RPC_URL || "https://ink.drpc.org";
-    default:
-      throw new Error(`No RPC URL configured for chainId ${chainId}`);
   }
 };
 
@@ -213,60 +185,95 @@ export const getTokenMetadataEffect = experimental_createEffect(
         );
       }
 
-      // Create contract instance with proper typing
-      const contract = getContract({
-        address: address as `0x${string}`,
-        abi: ERC20_ABI,
-        client: clients[chainId],
-      });
-
-      // Use Promise.all to execute all calls in parallel
-      // They will be automatically batched thanks to the batch option
-      const promises = [
-        contract.read.name().catch(() => null),
-        contract.read.NAME().catch(() => null),
-        contract.read.symbol().catch(() => null),
-        contract.read.SYMBOL().catch(() => null),
-        contract.read.decimals().catch(() => 18),
-      ];
-
-      const results = await Promise.all(promises);
-      const nameResult = results[0];
-      const nameBytes32Result = results[1] as string | null;
-      const symbolResult = results[2];
-      const symbolBytes32Result = results[3] as string | null;
-      const decimalsResult = results[4];
-
-      // Process name with fallbacks
       let name = "unknown";
-      if (nameResult !== null) {
-        name = sanitizeString(nameResult as string);
-      } else if (nameBytes32Result !== null) {
-        name = sanitizeString(
-          new TextDecoder().decode(
-            new Uint8Array(
-              Buffer.from(nameBytes32Result.slice(2), "hex").filter(
-                (n) => n !== 0
-              )
-            )
-          )
-        );
-      }
-
-      // Process symbol with fallbacks
       let symbol = "UNKNOWN";
-      if (symbolResult !== null) {
-        symbol = sanitizeString(symbolResult as string);
-      } else if (symbolBytes32Result !== null) {
-        symbol = sanitizeString(
-          new TextDecoder().decode(
-            new Uint8Array(
-              Buffer.from(symbolBytes32Result.slice(2), "hex").filter(
-                (n) => n !== 0
+      let decimalsResult = 18; // Default to 18 decimals
+
+      if (chainId === 42) {
+        const contract = getContract({
+          address: address as `0x${string}`,
+          abi: LSP7ABI,
+          client: clients[chainId],
+        });
+        const decimalsPromise = contract.read.decimals().catch(() => 18); // Default to 18
+    
+        const nameKey = keccak256(toUtf8Bytes('LSP4TokenName')) as `0x${string}`;
+        const symbolKey = keccak256(toUtf8Bytes('LSP4TokenSymbol')) as `0x${string}`;
+        const nameValuePromise = contract.read.getData([nameKey]).catch(() => null);
+        const symbolValuePromise = contract.read.getData([symbolKey]).catch(() => null);
+        
+        const [
+          nameValue,
+          symbolValue,
+          decimalsResult,
+        ] = await Promise.all([
+          nameValuePromise,
+          symbolValuePromise,
+          decimalsPromise,
+        ]);
+    
+          name = nameValue ? ethers.toUtf8String(nameValue) : "unknown";
+          name = sanitizeString(name);
+          symbol = symbolValue ? ethers.toUtf8String(symbolValue) : "UNKNOWN"; 
+          symbol = sanitizeString(symbol);         
+      }
+      else {
+          // Create contract instance with proper typing
+        const contract = getContract({
+          address: address as `0x${string}`,
+          abi: ERC20_ABI,
+          client: clients[chainId],
+        });
+
+        // Use Promise.all to execute all calls in parallel
+        // They will be automatically batched thanks to the batch option
+        const promises = [
+          contract.read.name().catch(() => null),
+          contract.read.NAME().catch(() => null),
+          contract.read.symbol().catch(() => null),
+          contract.read.SYMBOL().catch(() => null),
+          contract.read.decimals().catch(() => 18),
+        ];
+
+        const results = await Promise.all(promises);
+        const nameResult = results[0];
+        const nameBytes32Result = results[1] as string | null;
+        const symbolResult = results[2];
+        const symbolBytes32Result = results[3] as string | null;
+        decimalsResult = typeof results[4] === 'number' ? results[4] : 18; // Default to 18 if null or not a number
+
+        // Process name with fallbacks
+        
+        if (nameResult !== null) {
+          name = sanitizeString(nameResult as string);
+        } else if (nameBytes32Result !== null) {
+          name = sanitizeString(
+            new TextDecoder().decode(
+              new Uint8Array(
+                Buffer.from(nameBytes32Result.slice(2), "hex").filter(
+                  (n) => n !== 0
+                )
               )
             )
-          )
-        );
+          );
+        }
+
+        // Process symbol with fallbacks
+        if (symbolResult !== null) {
+          symbol = sanitizeString(symbolResult as string);
+        } else if (symbolBytes32Result !== null) {
+          symbol = sanitizeString(
+            new TextDecoder().decode(
+              new Uint8Array(
+                Buffer.from(symbolBytes32Result.slice(2), "hex").filter(
+                  (n) => n !== 0
+                )
+              )
+            )
+          );
+        }
+
+        
       }
 
       const result = {

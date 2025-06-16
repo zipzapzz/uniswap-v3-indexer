@@ -470,3 +470,51 @@ type TokenHourData {
   # close price USD
   close: BigDecimal!
 }
+
+type positions @entity {
+  # Positions created through NonfungiblePositionManager
+  # NFT token id
+  id: ID!
+  # owner of the NFT
+  owner: Bytes!
+  # pool position is within
+  pool: Pool!
+  # allow indexing by tokens
+  token0: Token!
+  # allow indexing by tokens
+  token1: Token!
+  # lower tick of the position
+  tickLower: Tick!
+  # upper tick of the position
+  tickUpper: Tick!
+  # total position liquidity
+  liquidity: BigInt!
+  # amount of token 0 ever deposited to position
+  depositedToken0: BigDecimal!
+  # amount of token 1 ever deposited to position
+  depositedToken1: BigDecimal!
+  # amount of token 0 ever withdrawn from position (without fees)
+  withdrawnToken0: BigDecimal!
+  # amount of token 1 ever withdrawn from position (without fees)
+  withdrawnToken1: BigDecimal!
+  # all time collect (inclusive of burn amounts)
+  collectedToken0: BigDecimal!
+  # all time collect (inclusive of burn amounts)
+  collectedToken1: BigDecimal!
+  # all time collected fees in token0
+  collectedFeesToken0: BigDecimal!
+  # all time collected fees in token1
+  collectedFeesToken1: BigDecimal!
+  # Total amount deposited in terms of USD
+  amountDepositedUSD: BigDecimal!
+  # Total amount withdrawn in terms of USD
+  amountWithdrawnUSD: BigDecimal!
+  # Total amount collected in terms of USD
+  amountCollectedUSD: BigDecimal!
+  # tx in which the position was initialized
+  transaction: Transaction!
+  # vars needed for fee computation
+  feeGrowthInside0LastX128: BigInt!
+  feeGrowthInside1LastX128: BigInt!
+  
+}

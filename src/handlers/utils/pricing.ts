@@ -55,7 +55,7 @@ export async function findNativePerToken(
 ): Promise<BigDecimal> {
   const tokenAddress = token.id.split("-")[1];
 
-  if (tokenAddress === wrappedNativeAddress.toLowerCase() || tokenAddress === ADDRESS_ZERO) {
+  if (tokenAddress === wrappedNativeAddress?.toLowerCase() || tokenAddress === ADDRESS_ZERO) {
     return ONE_BD;
   }
 

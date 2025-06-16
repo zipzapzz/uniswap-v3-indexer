@@ -8,6 +8,33 @@ contracts:
     handler: src/EventHandlers.ts
     events:
       - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
+  - name: NonfungiblePositionManager
+    handler: src/EventHandlers.ts
+    events:
+    - event: Collect(uint256 indexed tokenId, address recipient, uint256 amount0, uint256 amount1)
+      field_selection:
+          transaction_fields:
+            - hash
+            - gasPrice
+            - from
+    - event: DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)
+      field_selection:
+          transaction_fields:
+            - hash
+            - gasPrice
+            - from
+    - event: IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)
+      field_selection:
+          transaction_fields:
+            - hash
+            - gasPrice
+            - from
+    - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+      field_selection:
+          transaction_fields:
+            - hash
+            - gasPrice
+            - from
   - name: UniswapV3Pool
     handler: src/EventHandlers.ts
     events:
@@ -37,11 +64,13 @@ contracts:
             - from
 
 networks:
-  - id: 1 # Ethereum Mainnet
-    start_block: 0
+  - id: 42 # Lukso
+    start_block: 1939261
     contracts:
       - name: UniswapV3Factory
-        address: 0x1F98431c8aD98523631AE4a59f267346ea31F984
+        address: 0x8130c332dddf8964b08eab86aad3999017436a6e
+      - name: NonfungiblePositionManager
+        address: 0x855BB3e40261A73Dd4fc691fc024cc7d60794D00
       - name: UniswapV3Pool
   # - id: 42161 # Arbitrum One
   #   start_block: 0

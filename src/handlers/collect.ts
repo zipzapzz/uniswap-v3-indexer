@@ -8,7 +8,7 @@ import * as intervalUpdates from './utils/intervalUpdates';
 
 UniswapV3Pool.Collect.handlerWithLoader({
     loader: async ({ event, context }) => {
-        const poolId = `${event.chainId}-${event.srcAddress.toLowerCase()}`;
+        const poolId = `${event.srcAddress.toLowerCase()}`;
         const pool = await context.Pool.get(poolId);
         if (!pool) return;
 

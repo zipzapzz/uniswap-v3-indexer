@@ -7,7 +7,7 @@ import * as intervalUpdates from './utils/intervalUpdates';
 UniswapV3Pool.Burn.handlerWithLoader({
     loader: async ({ event, context }) => {
         const { factoryAddress } = CHAIN_CONFIGS[event.chainId];
-        const poolId = `${event.chainId}-${event.srcAddress.toLowerCase()}`;
+        const poolId = `${event.srcAddress.toLowerCase()}`;
         const pool = await context.Pool.get(poolId);
         if (!pool) return;
 

@@ -5,7 +5,7 @@ import { updatePoolDayData, updatePoolHourData } from "./utils/intervalUpdates";
 
 UniswapV3Pool.Initialize.handlerWithLoader({
     loader: async ({event, context}) => {
-        const poolId = `${event.chainId}-${event.srcAddress.toLowerCase()}`;
+        const poolId = `${event.srcAddress.toLowerCase()}`;
         const pool = await context.Pool.get(poolId);
         if (!pool) return;
 

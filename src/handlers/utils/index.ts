@@ -1,8 +1,13 @@
 import { BigDecimal, handlerContext, Transaction } from "generated";
 import { ZERO_BD, ONE_BD, ZERO_BI, ONE_BI } from "./constants";
+import { Web3 } from "web3";
+const web3 = new Web3();
 
 export function isAddressInList(address: string, list: string[]): boolean {
-    address = address.toLowerCase();
+    if (!address || !list || list.length === 0) {
+        return false;
+    }
+    address = address?.toLowerCase();
 
     for (const item of list) {
         if (address === item.toLowerCase()) {
@@ -113,4 +118,9 @@ export async function loadTransaction(
 
     context.Transaction.set(transaction as Transaction);
     return transaction as Transaction;
+}
+
+export function numberToBytes32(number: string): string {
+    const hexString = web3.utils.stringToHex(number);
+    return web3.utils.padLeft(hexString, 64);
 }

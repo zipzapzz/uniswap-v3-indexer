@@ -21,8 +21,8 @@ UniswapV3Factory.PoolCreated.handlerWithLoader({
     const [factory, token0RO, token1RO, token0Metadata, token1Metadata] =
       await Promise.all([
         context.Factory.get(`${event.chainId}-${factoryAddress.toLowerCase()}`),
-        context.Token.get(`${event.chainId}-${token0Address.toLowerCase()}`),
-        context.Token.get(`${event.chainId}-${token1Address.toLowerCase()}`),
+        context.Token.get(`${token0Address.toLowerCase()}`),
+        context.Token.get(`${token1Address.toLowerCase()}`),
         context.effect(getTokenMetadataEffect, {
           address: token0Address,
           chainId: event.chainId,
@@ -104,7 +104,7 @@ UniswapV3Factory.PoolCreated.handlerWithLoader({
       tokens[0] = { ...token0RO };
     } else {
       tokens[0] = {
-        id: `${event.chainId}-${token0Address.toLowerCase()}`,
+        id: `${token0Address.toLowerCase()}`,
         symbol: token0Metadata.symbol,
         name: token0Metadata.name,
         decimals: BigInt(token0Metadata.decimals),
@@ -128,7 +128,7 @@ UniswapV3Factory.PoolCreated.handlerWithLoader({
       tokens[1] = { ...token1RO };
     } else {
       tokens[1] = {
-        id: `${event.chainId}-${token1Address.toLowerCase()}`,
+        id: `${token1Address.toLowerCase()}`,
         symbol: token1Metadata.symbol,
         name: token1Metadata.name,
         decimals: BigInt(token1Metadata.decimals),
@@ -148,7 +148,7 @@ UniswapV3Factory.PoolCreated.handlerWithLoader({
     }
 
     const pool: Pool = {
-      id: `${event.chainId}-${event.params.pool.toLowerCase()}`,
+      id: `${event.params.pool.toLowerCase()}`,
       createdAtTimestamp: BigInt(event.block.timestamp),
       createdAtBlockNumber: BigInt(event.block.number),
       token0_id: tokens[0].id,

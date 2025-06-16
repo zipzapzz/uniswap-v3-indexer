@@ -14,6 +14,7 @@ export enum ChainId {
   WORLD = 59144,
   UNICHAIN = 130,
   SONEIUM = 1868,
+  LUKSO = 42
 }
 
 // Native token details interface
@@ -361,6 +362,32 @@ export const CHAIN_CONFIGS: { [chainId: number]: ChainConfig } = {
   },
   [ChainId.WORLD]: {
     factoryAddress: "0x7a5028bda40e7b173c278c5342087826455ea25a",
+    stablecoinWrappedNativePoolId: "0x5f835420502a7702de50cd0e78d8aa3608b2137e",
+    stablecoinIsToken0: false,
+    wrappedNativeAddress: "0x4200000000000000000000000000000000000006", // WETH
+    minimumNativeLocked: new BigDecimal("1"),
+    stablecoinAddresses: [
+      "0x79a02482a880bce3f13e09da970dc34db4cd24d1", // USDC.e
+    ],
+    whitelistTokens: [
+      "0x4200000000000000000000000000000000000006", // WETH
+      "0x79a02482a880bce3f13e09da970dc34db4cd24d1", // USDC.e
+      "0x03c7054bcb39f7b2e5b2c7acb37583e32d70cfa3", // WBTC
+      "0x2cfc85d8e48f8eab294be644d9e25c3030863003", // WLD
+      "0x859dbe24b90c9f2f7742083d3cf59ca41f55be5d", // sDAI
+      "0x0000000000000000000000000000000000000000", // Native ETH
+    ],
+    tokenOverrides: [],
+    poolsToSkip: [],
+    poolMappings: [],
+    nativeTokenDetails: {
+      symbol: "ETH",
+      name: "Ethereum",
+      decimals: BigInt(18),
+    },
+  },
+  [ChainId.LUKSO]: {
+    factoryAddress: "0x8130c332dddf8964b08eab86aad3999017436a6e",
     stablecoinWrappedNativePoolId: "0x5f835420502a7702de50cd0e78d8aa3608b2137e",
     stablecoinIsToken0: false,
     wrappedNativeAddress: "0x4200000000000000000000000000000000000006", // WETH
