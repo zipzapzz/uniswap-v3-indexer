@@ -44,7 +44,7 @@ export const getClient = (chainId: number): PublicClient => {
       clients[chainId] = createPublicClient({
         transport: http(getRpcUrl(chainId)),
       });
-      console.log(`Created client for chain ${chainId}`);
+    //   console.log(`Created client for chain ${chainId}`);
     } catch (e) {
       console.error(`Error creating client for chain ${chainId}:`, e);
       throw e;

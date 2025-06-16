@@ -19,8 +19,9 @@ import {
     POSITIONS_ADDRESS,
 } from './utils/constants';
 import { getClient } from "./utils/rpc";
-import { getContract, type PublicClient } from "viem";
-import { convertTokenToDecimal, loadTransaction, numberToBytes32 } from './utils/index';
+import { getContract } from "viem";
+import { numberToBytes32 } from './utils/index';
+import { loadPoolCache, savePoolCache } from "./utils/cache";
 
 const POSITION_ABI = [{"inputs":[{"internalType":"bytes32","name":"tokenId","type":"bytes32"}],"name":"tokenOwnerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"positions","outputs":[{"internalType":"uint96","name":"nonce","type":"uint96"},{"internalType":"address","name":"operator","type":"address"},{"internalType":"address","name":"token0","type":"address"},{"internalType":"address","name":"token1","type":"address"},{"internalType":"uint24","name":"fee","type":"uint24"},{"internalType":"int24","name":"tickLower","type":"int24"},{"internalType":"int24","name":"tickUpper","type":"int24"},{"internalType":"uint128","name":"liquidity","type":"uint128"},{"internalType":"uint256","name":"feeGrowthInside0LastX128","type":"uint256"},{"internalType":"uint256","name":"feeGrowthInside1LastX128","type":"uint256"},{"internalType":"uint128","name":"tokensOwed0","type":"uint128"},{"internalType":"uint128","name":"tokensOwed1","type":"uint128"}],"stateMutability":"view","type":"function"}] as const;
 const FACTORY_ABI = [{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint24","name":"fee","type":"uint24"}],"name":"getPool","outputs":[{"internalType":"address","name":"pool","type":"address"}],"stateMutability":"view","type":"function"}] as const;
@@ -33,6 +34,26 @@ async function getPoolAddressWithRetry(
     retries = 3,
     delayMs = 1000
   ): Promise<string | null> {
+    // add get pool address from cache by token0, token1, fee
+    if (!token0 || !token1 || fee <= 0) {
+      console.error("Invalid parameters for getPoolAddressWithRetry");
+      return null;
+    }
+
+    // Create the cache key
+    const cacheKey = `${token0.toLowerCase()}-${token1.toLowerCase()}-${fee}`;
+    // Check if the pool address is already cached
+
+    const metadataCache = await loadPoolCache(chainId);
+    // Check cache first - use original address (with checksum) as cache key
+    if (metadataCache[cacheKey]) {
+        // context.log.info(
+        //   `Using cached metadata for token ${address} on chain ${chainId}`
+        // );
+        // console.info(`Using cached pool address for ${cacheKey}`);
+        return metadataCache[cacheKey];
+    }
+
     const client = getClient(chainId);
 
     const factoryContract = getContract({
@@ -44,6 +65,8 @@ async function getPoolAddressWithRetry(
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const poolAddress = await factoryContract.read.getPool([token0 as `0x${string}`, token1 as `0x${string}`, fee]);
+        // save pool address to cache
+        await savePoolCache(chainId, cacheKey, poolAddress.toLowerCase());
         return poolAddress;
       } catch (error) {
         console.error(`Attempt ${attempt} failed to get pool:`, error);
